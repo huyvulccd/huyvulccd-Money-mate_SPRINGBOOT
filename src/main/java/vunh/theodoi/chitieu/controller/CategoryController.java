@@ -15,6 +15,7 @@ import java.util.List;
 @RequestMapping("/category")
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@CrossOrigin(origins = "http://localhost:5173")
 public class CategoryController {
 
     CategoryService categoryService;
@@ -24,10 +25,41 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
-    @PostMapping("")
-    public ResponseEntity<Void> addCategory(@RequestBody List<CategoryRecord> records) {
+    @PostMapping("/save")
+    public ResponseEntity<Long> addCategory(@RequestBody CategoryRecord record) {
+        Long id;
         try{
-            categoryService.saveCategory(records);
+            id = categoryService.saveCategory(record);
+        } catch (Exception e) {
+            throw new IllegalStateException();
+        }
+        return ResponseEntity.ok().body(id);
+    }
+
+    @PostMapping("/updateSortOrder")
+    public ResponseEntity<Void> updateSortOrder(@RequestBody List<String> records) {
+        try{
+            categoryService.updateSortOrder(records);
+        } catch (Exception e) {
+            throw new IllegalStateException();
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/edit")
+    public ResponseEntity<Void> editCategory(@RequestBody CategoryRecord record) {
+        try{
+            categoryService.saveCategory(record);
+        } catch (Exception e) {
+            throw new IllegalStateException();
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
+        try {
+            categoryService.deleteCategory(id);
         } catch (Exception e) {
             throw new IllegalStateException();
         }

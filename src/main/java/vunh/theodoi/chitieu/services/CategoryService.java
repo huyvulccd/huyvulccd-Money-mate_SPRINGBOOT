@@ -9,50 +9,64 @@ import vunh.theodoi.chitieu.dto.responses.CategoryResponse;
 import vunh.theodoi.chitieu.entities.Category;
 import vunh.theodoi.chitieu.repositories.CategoryRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class CategoryService {
     CategoryRepository categoryRepository;
+
     public List<CategoryResponse> getAllCategories() {
-        List<Category> categories = categoryRepository.findByIdUser("huyvulccd");
+        List<Category> categories = categoryRepository.findByIdUserOrder("huyvulccd");
         List<CategoryResponse> responses = new ArrayList<>();
-        categories.forEach(category -> responses.add(
-                new CategoryResponse(category.getName(), category.getSubCategory().split(","), category.getSortOrder(), category.isTracking()))
+        categories.forEach(category -> {
+                    String[] subCategory = new String[]{};
+                    if (!category.getSubCategory().isBlank())
+                        subCategory = category.getSubCategory().split(",");
+                    responses.add(
+                            new CategoryResponse(category.getId(), category.getName(), subCategory, category.getSortOrder(), category.getColor(), category.isTracking()));
+                }
         );
         return responses;
     }
 
-    public void saveCategory(List<CategoryRecord> records) {
-        int order = 0;
+    public Long saveCategory(CategoryRecord records) {
+        Category category = new Category();
+        category.setName(records.name());
+        category.setSubCategory(String.join(",", records.subCategories()));
+        category.setSortOrder(records.order());
+        category.setTracking(records.isTracking() != null && records.isTracking());
+        category.setColor(records.color());
+        category.setIdUser("huyvulccd");
+        if (records.id() != null)
+            category.setId(records.id());
 
-        List<Category> categories = categoryRepository.findByIdUser("huyvulccd");
-        Map<String, Long> namesRefId = categories.stream().collect(Collectors.toMap(Category::getName, Category::getId));
+        Category save = categoryRepository.save(category);
 
-        String namesToDelete = records.stream().filter(CategoryRecord::isDelete)
-                .map(CategoryRecord::name)
-                .collect(Collectors.joining(","));
-        categoryRepository.deleteCategory("huyvulccd", namesToDelete);
+        return save.getId();
+    }
 
-        List<CategoryRecord> recordsToSave = records.stream().filter(e -> e.isEdit() || e.isCreate()).toList();
+    public void deleteCategory(long id) {
+        categoryRepository.deleteById(id);
+    }
 
-        for (CategoryRecord record : recordsToSave) {
-            Category category = new Category();
-            category.setIdUser("huyvulccd");
-            category.setName(record.name());
-            category.setSubCategory(String.join(",", record.subCategories()));
-            category.setSortOrder((byte) order++);
-            category.setTracking(record.isTracking());
-
-            if (record.isEdit()) {
-                category.setId(namesRefId.get(record.name()));
-            }
-            categoryRepository.save(category);
+    public void updateSortOrder(List<String> records) {
+        Map<String, Byte> sortedMap = new HashMap<>();
+        for (byte i = 0; i < records.size(); i++) {
+            sortedMap.put(records.get(i), i);
         }
+
+        List<Category> categories = categoryRepository.findByIdUserOrder("huyvulccd");
+
+        for (Category category : categories) {
+            Byte sortOrder = sortedMap.get(category.getName());
+            if (sortOrder == null) {
+                throw new IllegalStateException("Data is illegal!!!");
+            }
+            category.setSortOrder(sortOrder);
+        }
+
+        categoryRepository.saveAll(categories);
     }
 }
