@@ -3,11 +3,11 @@ package vunh.theodoi.chitieu.dto.requests;
 import java.util.List;
 
 public record CategoryRecord(
+        Long id,
         String name,
-        List<String> subCategories,
-        boolean isTracking,
-        boolean isDelete,
-        boolean isEdit,
-        boolean isCreate
+        Byte order,
+        Boolean isTracking,
+        String color,
+        String subCategories
 ) {
 }

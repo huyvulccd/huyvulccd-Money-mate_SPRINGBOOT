@@ -26,6 +26,8 @@ public class Category {
     @Column(nullable = false)
     private boolean isTracking;
 
+    private String color;
+
     @Column(nullable = false)
     private byte sortOrder;
 }

@@ -10,6 +10,7 @@ import vunh.theodoi.chitieu.entities.Category;
 import vunh.theodoi.chitieu.repositories.CategoryRepository;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class CategoryService {
     CategoryRepository categoryRepository;
+
     public List<CategoryResponse> getAllCategories() {
         List<Category> categories = categoryRepository.findByIdUser("huyvulccd");
         List<CategoryResponse> responses = new ArrayList<>();
@@ -28,31 +30,41 @@ public class CategoryService {
         return responses;
     }
 
-    public void saveCategory(List<CategoryRecord> records) {
-        int order = 0;
+    public void saveCategory(CategoryRecord records) {
+        Category category = new Category();
+        category.setName(records.name());
+        category.setSubCategory(records.subCategories());
+        category.setSortOrder(records.order());
+        category.setTracking(records.isTracking());
+        category.setColor(records.color());
+        category.setIdUser("huyvulccd");
+        if (records.id() != null)
+            category.setId(records.id());
+
+        categoryRepository.save(category);
+
+    }
+
+    public void deleteCategory(long id) {
+        categoryRepository.deleteById(id);
+    }
+
+    public void updateSortOrder(List<String> records) {
+        Map<String, Byte> sortedMap = new HashMap<>();
+        for (byte i = 0; i < records.size(); i++) {
+            sortedMap.put(records.get(i), i);
+        }
 
         List<Category> categories = categoryRepository.findByIdUser("huyvulccd");
-        Map<String, Long> namesRefId = categories.stream().collect(Collectors.toMap(Category::getName, Category::getId));
 
-        String namesToDelete = records.stream().filter(CategoryRecord::isDelete)
-                .map(CategoryRecord::name)
-                .collect(Collectors.joining(","));
-        categoryRepository.deleteCategory("huyvulccd", namesToDelete);
-
-        List<CategoryRecord> recordsToSave = records.stream().filter(e -> e.isEdit() || e.isCreate()).toList();
-
-        for (CategoryRecord record : recordsToSave) {
-            Category category = new Category();
-            category.setIdUser("huyvulccd");
-            category.setName(record.name());
-            category.setSubCategory(String.join(",", record.subCategories()));
-            category.setSortOrder((byte) order++);
-            category.setTracking(record.isTracking());
-
-            if (record.isEdit()) {
-                category.setId(namesRefId.get(record.name()));
+        for (Category category : categories) {
+            Byte sortOrder = sortedMap.get(category.getName());
+            if (sortOrder == null) {
+                throw new IllegalStateException("Data is illegal!!!");
             }
-            categoryRepository.save(category);
+            category.setSortOrder(sortOrder);
         }
+
+        categoryRepository.saveAll(categories);
     }
 }
