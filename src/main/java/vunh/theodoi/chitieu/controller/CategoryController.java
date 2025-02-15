@@ -15,6 +15,7 @@ import java.util.List;
 @RequestMapping("/category")
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
+@CrossOrigin(origins = "http://localhost:5173")
 public class CategoryController {
 
     CategoryService categoryService;
@@ -25,13 +26,14 @@ public class CategoryController {
     }
 
     @PostMapping("/save")
-    public ResponseEntity<Void> addCategory(@RequestBody CategoryRecord record) {
+    public ResponseEntity<Long> addCategory(@RequestBody CategoryRecord record) {
+        Long id;
         try{
-            categoryService.saveCategory(record);
+            id = categoryService.saveCategory(record);
         } catch (Exception e) {
             throw new IllegalStateException();
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(id);
     }
 
     @PostMapping("/updateSortOrder")

@@ -9,11 +9,7 @@ import vunh.theodoi.chitieu.dto.responses.CategoryResponse;
 import vunh.theodoi.chitieu.entities.Category;
 import vunh.theodoi.chitieu.repositories.CategoryRepository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -22,27 +18,33 @@ public class CategoryService {
     CategoryRepository categoryRepository;
 
     public List<CategoryResponse> getAllCategories() {
-        List<Category> categories = categoryRepository.findByIdUser("huyvulccd");
+        List<Category> categories = categoryRepository.findByIdUserOrder("huyvulccd");
         List<CategoryResponse> responses = new ArrayList<>();
-        categories.forEach(category -> responses.add(
-                new CategoryResponse(category.getName(), category.getSubCategory().split(","), category.getSortOrder(), category.isTracking()))
+        categories.forEach(category -> {
+                    String[] subCategory = new String[]{};
+                    if (!category.getSubCategory().isBlank())
+                        subCategory = category.getSubCategory().split(",");
+                    responses.add(
+                            new CategoryResponse(category.getId(), category.getName(), subCategory, category.getSortOrder(), category.getColor(), category.isTracking()));
+                }
         );
         return responses;
     }
 
-    public void saveCategory(CategoryRecord records) {
+    public Long saveCategory(CategoryRecord records) {
         Category category = new Category();
         category.setName(records.name());
-        category.setSubCategory(records.subCategories());
+        category.setSubCategory(String.join(",", records.subCategories()));
         category.setSortOrder(records.order());
-        category.setTracking(records.isTracking());
+        category.setTracking(records.isTracking() != null && records.isTracking());
         category.setColor(records.color());
         category.setIdUser("huyvulccd");
         if (records.id() != null)
             category.setId(records.id());
 
-        categoryRepository.save(category);
+        Category save = categoryRepository.save(category);
 
+        return save.getId();
     }
 
     public void deleteCategory(long id) {
@@ -55,7 +57,7 @@ public class CategoryService {
             sortedMap.put(records.get(i), i);
         }
 
-        List<Category> categories = categoryRepository.findByIdUser("huyvulccd");
+        List<Category> categories = categoryRepository.findByIdUserOrder("huyvulccd");
 
         for (Category category : categories) {
             Byte sortOrder = sortedMap.get(category.getName());

@@ -17,7 +17,12 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
                 )""", nativeQuery = true)
     int isExists(String idUser, String category);
 
-    List<Category> findByIdUser(String huyvulccd);
+    @Query(value = """
+            SELECT * FROM category t WHERE
+            t.id_user = :userId
+            ORDER BY t.sort_order
+            """, nativeQuery = true)
+    List<Category> findByIdUserOrder(String userId);
 
     @Query(value = """
             DELETE FROM category
